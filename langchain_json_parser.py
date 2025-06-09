@@ -28,6 +28,7 @@ model_city = PromptTemplate(
         input_variables=["interesse"], # The variable to be replaced in the template, received from the user input
         partial_variables={"output_formatting": json_parser.get_format_instructions()}, # The variable to be replaced in the template, received from the json parser
 )
+
 chain_1 = model_city | LLM | parser
 
 # Create a SquentialChain to combine the prompts and the model
