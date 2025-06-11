@@ -7,15 +7,18 @@ from langchain.globals import set_debug
 from langchain.chains.conversation.base import ConversationChain
 from pydantic import BaseModel, Field
 from langchain_core.output_parsers import JsonOutputParser
-from langchain.memory import ConversationBufferMemory
+from langchain.memory import ConversationBufferWindowMemory
 
 # Carrega variáveis de ambiente do arquivo .env
 load_dotenv()
 # Ativa o modo debug para saída detalhada
 set_debug(True)
 
-# Define um modelo de dados para o destino usando Pydantic
+# Modelo Pydantic para representar um destino de viagem
 class Destination(BaseModel):
+    """
+    Representa um destino de viagem com nome da cidade e motivo para visitá-la.
+    """
     city: str = Field("Cidade a visitar")
     reason: str = Field("Motivo pelo qual é interessante visitar essa cidade")
 
@@ -28,10 +31,10 @@ atividade = "praia"
 LLM = ChatGoogleGenerativeAI(model="gemini-2.0-flash", api_key=os.getenv("API_KEY"))
 # Parser para saída em string
 parser = StrOutputParser()
-# Parser para saída em JSON baseada no modelo Destination
+# Parser para saída em JSON usando o modelo Destination
 json_parser = JsonOutputParser(pydantic_object=Destination)
 
-# Lista de mensagens simulando uma conversa
+# Lista de mensagens simulando uma conversa sobre destinos de viagem
 mensagens = [
         "Quero visitar um lugar no Brasil famoso por suas praias e cultura. Pode me recomendar?",
         "Qual é o melhor período do ano para visitar em termos de clima?",
@@ -41,9 +44,9 @@ mensagens = [
         "Na primeira cidade que você sugeriu lá atrás, quero saber 5 restaurantes para visitar. Responda somente o nome da cidade e o nome dos restaurantes.",
 ]
 
-# Inicializa a memória de buffer para manter o histórico da conversa
-memory = ConversationBufferMemory()
-# Cria a cadeia de conversação com o modelo, memória e modo verboso
+# Cria uma memória de janela para armazenar as últimas 2 interações da conversa
+memory = ConversationBufferWindowMemory(k=2)
+# Inicializa a cadeia de conversação com o modelo, memória e modo verboso
 conversation = ConversationChain(llm=LLM, 
                                  verbose=True,
                                  memory=memory)
@@ -51,3 +54,5 @@ conversation = ConversationChain(llm=LLM,
 for mensagem in mensagens:
     resposta = conversation.predict(input=mensagem)
     print(resposta)
+# Exibe o conteúdo atual da memória da conversa
+print(memory.load_memory_variables({}))
